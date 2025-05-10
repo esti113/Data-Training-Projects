@@ -1,0 +1,327 @@
+
+-- Create tournament table
+CREATE TABLE tournament (
+    tournament_id INT PRIMARY KEY,
+    tournament_name VARCHAR(50) NOT NULL,
+    start_date DATE NOT NULL,
+    end_date DATE NOT NULL,
+    winning_team_id INT
+);
+
+--  Create team table
+CREATE TABLE team (
+    team_id INT PRIMARY KEY,
+    team_name VARCHAR(50) NOT NULL
+);
+
+-- Create venue table
+CREATE TABLE venue (
+    venue_id INT PRIMARY KEY,
+    venue_name VARCHAR(50) NOT NULL
+);
+
+-- Create group table
+CREATE TABLE groups (
+    group_id INT PRIMARY KEY,
+    group_name VARCHAR(50) NOT NULL
+);
+
+-- Create event_type table
+CREATE TABLE event_type (
+    eventtype_id INT PRIMARY KEY,
+    event VARCHAR(50) NOT NULL
+);
+
+-- Create player table
+CREATE TABLE player (
+    player_id INT PRIMARY KEY,
+    first_name VARCHAR(50) NOT NULL,
+    last_name VARCHAR(50) NOT NULL,
+    team_id INT NOT NULL REFERENCES team(team_id),
+    group_id INT NOT NULL REFERENCES groups(group_id),
+    start_date DATE,
+    end_date DATE
+);
+
+-- Create match table and ensure that the home and away team are not the same in one match ( meaning the team can't play itself)
+CREATE TABLE match (
+    match_id INT PRIMARY KEY,
+    tournament_id INT REFERENCES tournament(tournament_id),
+    match_date DATE NOT NULL,
+    start_time TIME NOT NULL,
+    week_number INT,
+    hometeam_id INT NOT NULL REFERENCES team(team_id),
+    awayteam_id INT NOT NULL REFERENCES team(team_id),
+    venue_id INT NOT NULL REFERENCES venue(venue_id),
+    home_score INT,
+    away_score INT,
+    is_friendly BOOLEAN NOT NULL,
+    CHECK (hometeam_id <> awayteam_id)
+);
+
+-- Create match_event table which auto generate unique sequential event id’s (e.g. 1234)
+CREATE TABLE match_event (
+    eventtype_id SERIAL PRIMARY KEY,
+    match_id INT NOT NULL REFERENCES match(match_id),
+    player_id INT REFERENCES player(player_id),
+    event_type INT REFERENCES event_type(eventtype_id),
+    event_time TIME
+);
+
+
+
+--  To add foreign key for tournament winner after team table exists
+ALTER TABLE tournament ADD CONSTRAINT fk_winning_team 
+    FOREIGN KEY (winning_team_id) REFERENCES team(team_id);
+
+--Data Population (DML)
+-- Insert tournament data
+INSERT INTO tournament (tournament_id, tournament_name, start_date, end_date)
+VALUES (9101222, 'Rockborne_Autumn_Game2022', '2022-10-01', '2022-12-12' );
+
+-- Insert groups data
+INSERT INTO groups (group_id, group_name) VALUES 
+(100, 'Cohort 4'), (200, 'Cohort 5'), (300, 'Cohort 6'), (400, 'Cohort 7'),
+(500, 'Consultants'), (600, 'HR'), (700, 'Training Team'), (800, 'Bench');
+
+-- Insert teams data
+INSERT INTO team (team_id, team_name) VALUES 
+(1100, 'Data Masters'), (1200, 'BI Gods'), 
+(1300, 'Vis Wizards'), (1400, 'Data Cleaners');
+
+-- Insert venues data
+INSERT INTO venue (venue_id, venue_name) VALUES 
+(1, 'Wimbledon 1'), (2, 'Wimbledon 2'), (3, 'Wimbledon 3');
+
+-- Insert event types data
+INSERT INTO event_type (eventtype_id, event) VALUES 
+(200, 'Goal'), (125, 'Yellow Card'), (150, 'Red Card');
+
+-- Insert players data
+INSERT INTO player (player_id, first_name, last_name, team_id, group_id) VALUES
+(200, 'Aedan', 'Petty', 1100, 100),
+(201, 'Aliza', 'Santos', 1100, 300),
+(202, 'Kaylynn', 'Vaughan', 1100, 700),
+(203, 'Arjun', 'Bauer', 1100, 400),
+(204, 'Lilian', 'Huber', 1100, 200),
+(205, 'Lizeth', 'Roberts', 1100, 700),
+(206, 'Nathan', 'Mcdowell', 1100, 600),
+(207, 'Alvin', 'Ali', 1100, 500),
+(208, 'Jordin', 'Christensen', 1100, 600),
+(209, 'Saul', 'Blevins', 1100, 600),
+(210, 'Carina', 'Meza', 1200, 200),
+(211, 'Isabelle', 'Campos', 1200, 800),
+(212, 'Kyleigh', 'Phelps', 1200, 100),
+(213, 'Angels', 'Wong', 1200, 600),
+(214, 'Kole', 'Rojas', 1200, 600),
+(215, 'Martha', 'Potts', 1200, 400),
+(216, 'Tomas', 'Powell', 1200, 700),
+(217, 'Paxton', 'Clarke', 1200, 800),
+(218, 'Jamya', 'Dodson', 1200, 500),
+(219, 'Georgia', 'Clements', 1200, 500),
+(220, 'Edwin', 'Crawford', 1300, 200),
+(221, 'Malachi', 'Osborn', 1300, 500),
+(222, 'Zion', 'Kent', 1300, 200),
+(223, 'Anahi', 'Reyes', 1300, 800),
+(224, 'Maddox', 'Cabrera', 1300, 500),
+(225, 'Brody', 'Gutierrez', 1300, 400),
+(226, 'Hayley', 'Stevenson', 1300, 300),
+(227, 'Kamora', 'Sanchez', 1300, 500),
+(228, 'Livia', 'Holmes', 1300, 700),
+(229, 'Tanner', 'Jenkins', 1300, 500),
+(230, 'Madelyn', 'Meadows', 1400, 800),
+(231, 'Paola', 'Wilkerson', 1400, 300),
+(232, 'Jared', 'Patton', 1400, 700),
+(233, 'Pierre', 'Washington', 1400, 500),
+(234, 'Dominik', 'Cochran', 1400, 400),
+(235, 'Miya', 'Skinner', 1400, 400),
+(236, 'Mara', 'Barnett', 1400, 800),
+(237, 'Cornelius', 'Dodson', 1400, 200),
+(238, 'Ashleigh', 'Kaiser', 1400, 700),
+(239, 'Weston', 'Meza', 1400, 700);
+
+--  Insert match data (with NULL handling for tournament_id)
+INSERT INTO match (
+    match_id, tournament_id, match_date, start_time, week_number,
+    hometeam_id, awayteam_id, venue_id, home_score, away_score, is_friendly
+) VALUES 
+(110221, 9101222, '2022-10-01', '16:00:00', 1, 1100, 1200, 1, 2, 0, FALSE),
+(110222, 9101222, '2022-10-01', '16:00:00', 1, 1300, 1400, 2, 1, 1, FALSE),
+(810221, 9101222, '2022-10-08', '16:00:00', 2, 1100, 1300, 2, 2, 1, FALSE),
+(810222, 9101222, '2022-10-08', '16:00:00', 2, 1200, 1400, 3, 2, 1, FALSE),
+(2210221, 9101222, '2022-10-22', '16:00:00', 3, 1100, 1400, 3, 0, 0, FALSE),
+(2210222, 9101222, '2022-10-22', '16:00:00', 3, 1200, 1300, 2, 1, 2, FALSE),
+(2910221, 9101222, '2022-10-29', '16:00:00', 4, 1200, 1300, 1, 2, 2, FALSE),
+(2910222, 9101222, '2022-10-29', '16:00:00', 4, 1400, 1300, 3, 1, 2, FALSE),
+(511221, 9101222, '2022-11-05', '16:00:00', 5, 1300, 1100, 3, 3, 2, FALSE),
+(511222, 9101222, '2022-11-05', '16:00:00', 5, 1400, 1200, 1, 0, 1, FALSE),
+(1211221, 9101222, '2022-11-12', '16:00:00', 6, 1400, 1100, 2, 2, 0, FALSE),
+(1212222, 9101222, '2022-12-12', '16:00:00', 6, 1300, 1200, 3, 2, 2, FALSE),
+(1211231, NULL, '2023-11-12', '16:00:00', NULL, 1400, 1100, 1, NULL, NULL, TRUE),
+(1211232, NULL, '2023-11-12', '16:00:00', NULL, 1300, 1200, 3, NULL, NULL, TRUE)
+
+
+-- Insert match events (sample)
+INSERT INTO match_event (match_id, eventtype_id, player_id, event_type, event_time)
+VALUES 
+(110221,1,207,200,NULL),
+(110221,2,206,200,NULL),
+(110221,3,211,125,NULL),
+(110222,4,226,200,NULL),
+(110222,5,229,150,NULL),
+(110222,6,234,200,NULL),
+(810221,7,207,200,NULL),
+(810221,8,207,200,NULL),
+(810221,9,200,125,NULL),
+(810221,10,208,125,NULL),
+(810221,11,226,200,NULL),
+(810222,12,218,200,NULL),
+(810222,13,216,200,NULL),
+(810222,14,234,200,NULL),
+(810222,15,231,150,NULL),
+(2210221,16,209,125,NULL),
+(2210221,17,237,125,NULL),
+(2210222,18,218,200,NULL),
+(2210222,19,227,200,NULL),
+(2210222,20,226,200,NULL),
+(2910221,21,218,200,NULL),
+(2910221,22,215,200,NULL),
+(2910221,23,207,200,NULL),
+(2910221,24,202,200,NULL),
+(2910221,25,202,125,NULL),
+(2910222,26,234,200,NULL),
+(2910222,27,234,125,NULL),
+(2910222,28,224,200,NULL),
+(2910222,29,226,200,NULL),
+(511221,30,228,200,NULL),
+(511221,31,228,200,NULL),
+(511221,32,225,200,NULL),
+(511221,33,222,125,NULL),
+(511221,34,206,200,NULL),
+(511221,35,207,200,NULL),
+(511222,36,231,150,NULL),
+(511222,37,218,200,NULL),
+(1211221,38,234,200,NULL),
+(1211221,39,236,200,NULL),
+(1211221,40,200,125,NULL),
+(1212222,41,225,200,NULL),
+(1212222,42,224,200,NULL),
+(1212222,43,218,200,NULL),
+(1212222,44,217,200,NULL),
+(1212222,45,216,125,NULL),
+(1211231,46,NULL,NULL,NULL), 
+(1211232,47,NULL,NULL,NULL);
+
+
+
+-- 1. Listing all students who play for a particular department 
+SELECT p.player_id, p.first_name, p.last_name, t.team_name
+FROM player p
+JOIN team t ON p.team_id = t.team_id
+JOIN groups g ON p.group_id = g.group_id
+WHERE g.group_name = 'Cohort 4';
+
+-- 2. Listing all fixtures for a specific date (29th October 2022)
+SELECT m.match_date, m.start_time, 
+       ht.team_name AS home_team, at.team_name AS away_team,
+       v.venue_name, m.home_score, m.away_score
+FROM match m
+JOIN team ht ON m.hometeam_id = ht.team_id
+JOIN team at ON m.awayteam_id = at.team_id
+JOIN venue v ON m.venue_id = v.venue_id
+WHERE m.match_date = '2022-10-29';
+
+-- 3. Listing all players who have scored more than 2 goals
+SELECT 
+    p.player_id, 
+    p.first_name, 
+    p.last_name, 
+    t.team_name, 
+    COUNT(*) AS goals_scored
+FROM player p
+JOIN team t ON p.team_id = t.team_id
+JOIN match_event me ON p.player_id = me.player_id
+JOIN event_type et ON me.event_type = et.eventtype_id
+WHERE et.eventtype_id = 200 -- goal
+GROUP BY p.player_id, p.first_name, p.last_name, t.team_name
+HAVING COUNT(*) > 2
+ORDER BY goals_scored DESC;
+
+-- if you only want to see results from non friendly matches
+SELECT 
+    p.player_id, 
+    p.first_name, 
+    p.last_name, 
+    t.team_name, 
+    COUNT(*) AS goals_scored
+FROM player p
+JOIN team t ON p.team_id = t.team_id
+JOIN match_event me ON p.player_id = me.player_id
+JOIN event_type et ON me.event_type = et.eventtype_id
+JOIN match m ON me.match_id = m.match_id
+WHERE et.eventtype_id = 200  -- Goal
+  AND m.is_friendly = false -- Only non-friendly matches
+GROUP BY p.player_id, p.first_name, p.last_name, t.team_name
+HAVING COUNT(*) > 1
+ORDER BY goals_scored DESC;
+
+--4. Listing the number of cards (yellow and red) per team
+SELECT 
+    t.team_name, 
+    SUM(CASE WHEN et.eventtype_id = 125 THEN 1 ELSE 0 END) AS yellow_cards,
+    SUM(CASE WHEN et.eventtype_id = 150 THEN 1 ELSE 0 END) AS red_cards
+FROM team t
+JOIN player p ON t.team_id = p.team_id
+JOIN match_event me ON p.player_id = me.player_id
+JOIN event_type et ON me.event_type = et.eventtype_id
+JOIN match m ON me.match_id = m.match_id
+WHERE et.eventtype_id IN (125, 150) -- yellow card, red card
+  AND m.is_friendly = false -- Non firendly
+GROUP BY t.team_name
+ORDER BY yellow_cards DESC, red_cards DESC;
+
+
+--5. Return the games that are going to be played (friendly matches)
+SELECT m.match_date, m.start_time, 
+       ht.team_name AS home_team, at.team_name AS away_team,
+       v.venue_name
+FROM match m
+JOIN team ht ON m.hometeam_id = ht.team_id
+JOIN team at ON m.awayteam_id = at.team_id
+JOIN venue v ON m.venue_id = v.venue_id
+WHERE m.is_friendly = true 
+ORDER BY m.match_date, m.start_time;
+
+
+-- 6. Return the number of goals in favor, goals against, goals difference and points by team
+WITH team_stats AS (
+    SELECT 
+        t.team_id,
+        t.team_name,
+        -- Goals for (scored by this team)
+        SUM(CASE WHEN m.hometeam_id = t.team_id THEN m.home_score 
+                 WHEN m.awayteam_id = t.team_id THEN m.away_score 
+                 ELSE 0 END) AS goals_for,
+        -- Goals against (conceded by this team)
+        SUM(CASE WHEN m.hometeam_id = t.team_id THEN m.away_score 
+                 WHEN m.awayteam_id = t.team_id THEN m.home_score 
+                 ELSE 0 END) AS goals_against,
+        -- Points calculation (3 for win, 1 for draw)
+        SUM(CASE 
+            WHEN m.hometeam_id = t.team_id AND m.home_score > m.away_score THEN 3
+            WHEN m.awayteam_id = t.team_id AND m.away_score > m.home_score THEN 3
+            WHEN m.home_score = m.away_score THEN 1
+            ELSE 0 END) AS points
+    FROM team t
+    LEFT JOIN match m ON t.team_id = m.hometeam_id OR t.team_id = m.awayteam_id
+    WHERE m.is_friendly = false AND m.home_score IS NOT NULL
+    GROUP BY t.team_id, t.team_name
+)
+SELECT 
+    team_name,
+    goals_for,
+    goals_against,
+    (goals_for - goals_against) AS goal_difference,
+    points
+FROM team_stats
+ORDER BY points DESC, goal_difference DESC, goals_for DESC;
